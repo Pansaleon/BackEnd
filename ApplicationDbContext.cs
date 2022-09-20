@@ -11,5 +11,6 @@ namespace WEBAPI_Backend
 
         }
         public DbSet<Manga> Mangas { get; set; }
+        public DbSet<Mangaka> Mangakas { get; set; } 
     }
 }
