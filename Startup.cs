@@ -1,4 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace WEBAPI_Backend
 {
@@ -12,11 +15,15 @@ namespace WEBAPI_Backend
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(x => 
+            x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(Configuration.GetConnectionString("defaultConnection")));
             services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(c =>
+            {
+            c.SwaggerDoc("v1",new OpenApiInfo { Title= "WEBAPI-Backend", Version= "v1"});
+            });
         }
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
