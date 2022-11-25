@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WEBAPI_Backend.DTOs;
 using WEBAPI_Backend.Entidades;
 
 namespace WEBAPI_Backend.Controllers
@@ -10,16 +12,20 @@ namespace WEBAPI_Backend.Controllers
     {
 
         private readonly ApplicationDbContext dbContext;
-        public ClasesController(ApplicationDbContext context)
+        private readonly IMapper mapper;
+        public ClasesController(ApplicationDbContext context, IMapper mapper)
         {
             this.dbContext = context;
+            this.mapper = mapper;
         }
 
-        [HttpGet]
+        
+        [HttpGet("/listadoClase")]
         public async Task<ActionResult<List<Clase>>> GetAll()
         {
             return await dbContext.Clases.ToListAsync();
         }
+
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Clase>> GetById(int id)
@@ -29,17 +35,31 @@ namespace WEBAPI_Backend.Controllers
 
         [HttpPost]
 
-        public async Task<ActionResult> Post(Clase clase)
+        public async Task<ActionResult> Post(ClaseCreacionDto claseCreacionDto)
         {
-            var existeManga = await dbContext.Mangas.AnyAsync(x => x.Id == clase.MangaId);
-            if (!existeManga)
+            if (claseCreacionDto.MangasIds == null)
             {
-                return BadRequest($"No existe el manga con el id: {clase.MangaId}");
+                return BadRequest("No se puede crear una clase sin mangas.");
             }
+
+            var mangasIds = await dbContext.Mangas
+                .Where(mangaBD => claseCreacionDto.MangasIds.Contains(mangaBD.Id)).Select(x=> x.Id).ToListAsync();
+
+
+            if (claseCreacionDto.MangasIds.Count != mangasIds.Count)
+            {
+                return BadRequest("No existe uno de los alumnos enviados");
+            }
+            var clase = mapper.Map<Clase>(claseCreacionDto);
+
             dbContext.Add(clase);
             await dbContext.SaveChangesAsync();
-            return Ok();
+            var claseDto = mapper.Map<ClaseDto>(clase);
+
+            return CreatedAtRoute("obtenerClase", new { id = clase.Id}, claseDto);
         }
+
+
         [HttpPut("{id:int}")]
 
         public async Task<ActionResult> Put(Clase clase, int id)
